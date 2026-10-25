@@ -1,0 +1,16 @@
+{
+  "name": "EvenKeel — your real monthly spending",
+  "short_name": "EvenKeel",
+  "description": "A private, local-first expense tracker that smooths lumpy periodic payments into a true monthly picture.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0f1a",
+  "theme_color": "#0d9488",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "maskable" }
+  ]
+}
