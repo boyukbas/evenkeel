@@ -8,6 +8,15 @@ splurge) no longer distorts the month — and then points you at concrete saving
 > All your data stays in your browser (IndexedDB). Nothing is uploaded. No
 > account, no server, no tracking.
 
+![EvenKeel dashboard with demo data: actual and normalized spend, a 12-month trend and potential savings](docs/dashboard.png)
+
+<details>
+<summary>More: the Insights page</summary>
+
+![EvenKeel insights with demo data: savings suggestions and a subscription audit](docs/insights.png)
+
+</details>
+
 ---
 
 ## The big idea: normalization
