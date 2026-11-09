@@ -13,7 +13,7 @@ splurge) no longer distorts the month — and then points you at concrete saving
 <details>
 <summary>More: the Insights page</summary>
 
-![EvenKeel insights with demo data: savings suggestions and a subscription audit](docs/insights.png)
+![EvenKeel insights with demo data: insight cards, the savings total and the first savings suggestions](docs/insights.png)
 
 </details>
 
