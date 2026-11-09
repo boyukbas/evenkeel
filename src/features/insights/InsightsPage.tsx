@@ -57,7 +57,8 @@ export function InsightsPage() {
 
       <SavingsBanner monthly={totals.monthly} annual={totals.annual} count={opportunities.length} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Side by side only on very wide screens: the subscription table needs ~34rem. */}
+      <div className="grid gap-6 2xl:grid-cols-2">
         <SavingOpportunities opportunities={opportunities} byId={byId} />
         <SubscriptionAudit subscriptions={subscriptions} byId={byId} />
       </div>

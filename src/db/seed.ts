@@ -5,7 +5,7 @@
  */
 import type { Category, Expense, RecurringExpense, SavingsGoal } from "@/types";
 import { newId, now } from "@/db/database";
-import { addMonthsToKey, currentMonthKey } from "@/lib/date";
+import { addMonthsToKey, currentMonthKey, todayISO } from "@/lib/date";
 
 interface SeedBundle {
   expenses: Expense[];
@@ -13,11 +13,20 @@ interface SeedBundle {
   goals: SavingsGoal[];
 }
 
+// A fixed-seed generator (mulberry32), so the demo tells the same story and
+// shows the same totals on every fresh install.
+let state = 0x5eed;
+function random(): number {
+  state = (state + 0x6d2b79f5) | 0;
+  let t = Math.imul(state ^ (state >>> 15), 1 | state);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
 function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+  return arr[Math.floor(random() * arr.length)];
 }
 function rand(min: number, max: number): number {
-  return Math.round((min + Math.random() * (max - min)) * 100) / 100;
+  return Math.round((min + random() * (max - min)) * 100) / 100;
 }
 function day(month: string, d: number): string {
   return `${month}-${String(Math.min(28, Math.max(1, d))).padStart(2, "0")}`;
@@ -27,6 +36,12 @@ export function generateDemoData(categories: Category[], currency: string): Seed
   const byName = new Map(categories.map((c) => [c.name, c.id]));
   const id = (name: string) => byName.get(name) ?? categories[0].id;
   const ts = now();
+  state = 0x5eed;
+  const today = todayISO();
+  // Twelve months of history, so the dashboard's 12-month trend is full.
+  const MONTHS = 12;
+  const first = -(MONTHS - 1);
+  const start = (d: number) => day(addMonthsToKey(currentMonthKey(), first), d);
 
   const expenses: Expense[] = [];
   const recurring: RecurringExpense[] = [];
@@ -36,7 +51,7 @@ export function generateDemoData(categories: Category[], currency: string): Seed
     id: newId(),
     currency,
     interval: 1,
-    anchorDate: day(addMonthsToKey(currentMonthKey(), -7), 1),
+    anchorDate: start(1),
     endDate: null,
     amortize: false,
     active: true,
@@ -46,18 +61,20 @@ export function generateDemoData(categories: Category[], currency: string): Seed
     ...over,
   });
 
-  // Steady essentials + the flagship lumpy charges.
+  // Steady essentials + the flagship lumpy charges. The yearly and half-yearly
+  // ones are anchored a year back, so they land as spikes inside the chart while
+  // their smoothed share already covers every month shown.
   recurring.push(
-    baseRec({ name: "Rent", amount: 1450, categoryId: id("Housing"), frequency: "monthly", anchorDate: day(addMonthsToKey(currentMonthKey(), -7), 1) }),
-    baseRec({ name: "Internet", amount: 60, categoryId: id("Utilities"), frequency: "monthly", anchorDate: day(addMonthsToKey(currentMonthKey(), -7), 5) }),
-    baseRec({ name: "Mobile plan", amount: 45, categoryId: id("Utilities"), frequency: "monthly", anchorDate: day(addMonthsToKey(currentMonthKey(), -7), 8) }),
-    baseRec({ name: "Family life insurance", amount: 1320, categoryId: id("Insurance"), frequency: "annual", amortize: true, anchorDate: day(addMonthsToKey(currentMonthKey(), -3), 14) }),
-    baseRec({ name: "Car insurance", amount: 560, categoryId: id("Insurance"), frequency: "semiannual", amortize: true, anchorDate: day(addMonthsToKey(currentMonthKey(), -5), 20) }),
-    baseRec({ name: "Gym membership", amount: 39, categoryId: id("Entertainment"), frequency: "monthly", anchorDate: day(addMonthsToKey(currentMonthKey(), -7), 3) }),
-    baseRec({ name: "Netflix", amount: 15.49, categoryId: id("Subscriptions"), frequency: "monthly", anchorDate: day(addMonthsToKey(currentMonthKey(), -7), 11) }),
-    baseRec({ name: "Spotify", amount: 10.99, categoryId: id("Subscriptions"), frequency: "monthly", anchorDate: day(addMonthsToKey(currentMonthKey(), -7), 17) }),
-    baseRec({ name: "Cloud storage", amount: 2.99, categoryId: id("Subscriptions"), frequency: "monthly", anchorDate: day(addMonthsToKey(currentMonthKey(), -7), 2) }),
-    baseRec({ name: "Design software", amount: 119.88, categoryId: id("Subscriptions"), frequency: "annual", amortize: true, anchorDate: day(addMonthsToKey(currentMonthKey(), -2), 9) }),
+    baseRec({ name: "Rent", amount: 1450, categoryId: id("Housing"), frequency: "monthly", anchorDate: start(1) }),
+    baseRec({ name: "Internet", amount: 60, categoryId: id("Utilities"), frequency: "monthly", anchorDate: start(5) }),
+    baseRec({ name: "Mobile plan", amount: 45, categoryId: id("Utilities"), frequency: "monthly", anchorDate: start(8) }),
+    baseRec({ name: "Family life insurance", amount: 1320, categoryId: id("Insurance"), frequency: "annual", amortize: true, anchorDate: day(addMonthsToKey(currentMonthKey(), -14), 14) }),
+    baseRec({ name: "Car insurance", amount: 560, categoryId: id("Insurance"), frequency: "semiannual", amortize: true, anchorDate: start(20) }),
+    baseRec({ name: "Gym membership", amount: 39, categoryId: id("Entertainment"), frequency: "monthly", anchorDate: start(3) }),
+    baseRec({ name: "Netflix", amount: 15.49, categoryId: id("Subscriptions"), frequency: "monthly", anchorDate: start(11) }),
+    baseRec({ name: "Spotify", amount: 10.99, categoryId: id("Subscriptions"), frequency: "monthly", anchorDate: start(17) }),
+    baseRec({ name: "Cloud storage", amount: 2.99, categoryId: id("Subscriptions"), frequency: "monthly", anchorDate: start(2) }),
+    baseRec({ name: "Design software", amount: 119.88, categoryId: id("Subscriptions"), frequency: "annual", amortize: true, anchorDate: day(addMonthsToKey(currentMonthKey(), -13), 9) }),
   );
 
   const groceryStores = ["Whole Foods", "Trader Joe's", "Aldi", "Costco", "Local Market"];
@@ -75,8 +92,8 @@ export function generateDemoData(categories: Category[], currency: string): Seed
     ...over,
   });
 
-  // Eight months of discretionary + variable spending.
-  for (let i = 7; i >= 0; i--) {
+  // Twelve months of discretionary + variable spending.
+  for (let i = MONTHS - 1; i >= 0; i--) {
     const m = addMonthsToKey(currentMonthKey(), -i);
 
     // Groceries — a few trips a month.
@@ -93,21 +110,21 @@ export function generateDemoData(categories: Category[], currency: string): Seed
     // Electricity (variable).
     expenses.push(e({ date: day(m, 12), amount: rand(55, 120), categoryId: id("Utilities"), description: "Electricity", method: "directdebit" }));
     // Occasional shopping / entertainment.
-    if (Math.random() > 0.4) {
+    if (random() > 0.4) {
       expenses.push(e({ date: day(m, 16), amount: rand(25, 180), categoryId: id("Shopping"), description: pick(shops), method: "card" }));
     }
-    if (Math.random() > 0.5) {
+    if (random() > 0.5) {
       expenses.push(e({ date: day(m, 19), amount: rand(15, 70), categoryId: id("Entertainment"), description: pick(["Cinema", "Concert", "Game", "Books"]), method: "card" }));
     }
     // A health copay now and then.
-    if (Math.random() > 0.7) {
+    if (random() > 0.7) {
       expenses.push(e({ date: day(m, 10), amount: rand(20, 90), categoryId: id("Health"), description: "Pharmacy", method: "card" }));
     }
   }
 
-  // One splurge: a holiday three months ago (a lumpy, discretionary spike that
+  // One splurge: a holiday seven months ago (a lumpy, discretionary spike that
   // the normalized view will visibly absorb). Amortized over 12 months.
-  const tripMonth = addMonthsToKey(currentMonthKey(), -3);
+  const tripMonth = addMonthsToKey(currentMonthKey(), -7);
   expenses.push(
     e({ date: day(tripMonth, 14), amount: 1850, categoryId: id("Travel"), description: "Weekend city break (flights + hotel)", method: "card", amortizeMonths: 12, tags: ["holiday"] }),
   );
@@ -143,5 +160,6 @@ export function generateDemoData(categories: Category[], currency: string): Seed
     },
   );
 
-  return { expenses, recurring, goals };
+  // Nothing dated in the future: drop this month's one-offs that haven't happened yet.
+  return { expenses: expenses.filter((x) => x.date <= today), recurring, goals };
 }

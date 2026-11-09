@@ -23,7 +23,7 @@ export function NeedsVsWants({ data }: { data: NeedsWants }) {
         {data.total <= 0 ? (
           <EmptyState title="Nothing to split yet" description="Log some spending to see your needs/wants balance." />
         ) : (
-          <div className="flex flex-col items-center gap-5 sm:flex-row">
+          <div className="flex flex-col items-center gap-5 sm:flex-row lg:flex-col">
             <div className="relative h-36 w-36 shrink-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
